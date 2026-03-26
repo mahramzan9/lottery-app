@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#18181b">
+<title>选号助手 — 数据分析工具</title>
+<link rel="manifest" href="manifest.json">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB',sans-serif;background:#f4f4f2;color:#18181b;min-height:100dvh}
+.app{max-width:480px;margin:0 auto;padding:0 0 80px}
+
+/* Nav */
+.nav{background:#fff;border-bottom:1px solid #e8e8e4;padding:14px 16px 12px;position:sticky;top:0;z-index:10}
+.nav-title{font-size:16px;font-weight:600;letter-spacing:-0.3px}
+.nav-sub{font-size:10px;color:#a0a09a;margin-top:1px}
+
+/* Bottom tab bar */
+.tabbar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e8e8e4;display:flex;z-index:20;padding-bottom:env(safe-area-inset-bottom)}
+.tabbar-btn{flex:1;padding:10px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;border:none;background:none;cursor:pointer;color:#a0a09a;font-size:10px;transition:color .15s}
+.tabbar-btn.active{color:#18181b}
+.tab-icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center}
+
+/* Pages */
+.page{display:none;padding:16px}
+.page.active{display:block}
+
+/* Type toggle */
+.type-toggle{display:flex;gap:8px;margin-bottom:16px;background:#e8e8e4;padding:3px;border-radius:12px}
+.type-btn{flex:1;padding:9px;border:none;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;background:none;color:#6b6b66;transition:all .2s}
+.type-btn.active{background:#fff;color:#18181b;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+
+/* Cards */
+.card{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px}
+.card-label{font-size:10px;font-weight:600;color:#a0a09a;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}
+
+/* Slider */
+.slider-group{margin-bottom:12px}
+.slider-row{display:flex;align-items:center;gap:10px;margin-top:4px}
+.slider-row input[type=range]{flex:1;height:3px;-webkit-appearance:none;appearance:none;background:#e8e8e4;border-radius:2px;outline:none}
+.slider-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#18181b;cursor:pointer}
+.slider-lbl{display:flex;justify-content:space-between;align-items:center}
+.slider-lbl span:first-child{font-size:12px;color:#6b6b66}
+.slider-val{font-size:12px;font-weight:600;color:#18181b;background:#f4f4f2;padding:2px 8px;border-radius:6px}
+
+/* Grid */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mini-card{background:#f8f8f6;border-radius:10px;padding:10px 12px}
+.mini-card .mini-label{font-size:10px;color:#a0a09a;margin-bottom:6px}
+.num-row{display:flex;align-items:center;gap:6px}
+.num-row input[type=number]{width:48px;padding:5px 4px;text-align:center;border:1px solid #e0e0dc;border-radius:8px;font-size:13px;background:#fff}
+.num-row span{font-size:11px;color:#a0a09a}
+
+/* Toggles */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid #f0f0ec}
+.toggle-row:last-child{border-bottom:none}
+.toggle-row label{font-size:13px;color:#4a4a46}
+.sw{position:relative;width:36px;height:20px;cursor:pointer}
+.sw input{opacity:0;width:0;height:0}
+.sw-track{position:absolute;inset:0;background:#e0e0dc;border-radius:10px;transition:background .2s}
+.sw input:checked + .sw-track{background:#18181b}
+.sw-thumb{position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;transition:transform .2s;pointer-events:none;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.sw input:checked ~ .sw-thumb{transform:translateX(16px)}
+
+/* Count buttons */
+.count-row{display:flex;gap:6px}
+.cnt-btn{flex:1;padding:8px 4px;border:1px solid #e0e0dc;border-radius:9px;background:#fff;font-size:12px;font-weight:500;color:#6b6b66;cursor:pointer;transition:all .15s}
+.cnt-btn.active{background:#18181b;color:#fff;border-color:#18181b}
+
+/* Generate button */
+.gen-btn{width:100%;padding:15px;background:#18181b;color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s;margin-top:4px}
+.gen-btn:disabled{opacity:.4}
+.gen-btn:active{opacity:.8}
+
+/* Results */
+.results-header{display:flex;justify-content:space-between;align-items:center;margin:18px 0 10px}
+.results-title{font-size:12px;font-weight:600;color:#a0a09a;text-transform:uppercase;letter-spacing:.06em}
+.sort-pills{display:flex;gap:4px}
+.sort-pill{font-size:10px;padding:3px 9px;border:1px solid #e0e0dc;border-radius:20px;background:#fff;cursor:pointer;color:#6b6b66;transition:all .1s}
+.sort-pill.active{background:#18181b;color:#fff;border-color:#18181b}
+
+/* Result card */
+.result-card{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:8px;cursor:pointer;border:1.5px solid transparent;transition:border-color .15s}
+.result-card:active{background:#fafaf8}
+.result-card.saved{border-color:#10a37f}
+.balls{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.ball{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
+.ball.r{background:#FEF2F2;color:#7F1D1D;border:1px solid #FECACA}
+.ball.b{background:#EFF6FF;color:#1E3A5F;border:1px solid #BFDBFE}
+.ball.sep{width:12px;font-size:16px;color:#d0d0cc}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;align-items:center}
+.tag{font-size:10px;padding:2px 8px;border-radius:20px}
+.tag.hot{background:#FFF7ED;color:#92400E}
+.tag.cold{background:#EFF6FF;color:#1E3A5F}
+.tag.sum{background:#F5F3FF;color:#4C1D95}
+.tag.score{background:#F0FDF4;color:#14532D}
+.tag.score.mid{background:#FFFBEB;color:#78350F}
+.tag.score.low{background:#F9FAFB;color:#6B7280}
+.save-btn{margin-left:auto;font-size:10px;padding:3px 10px;border:1px solid #e0e0dc;border-radius:20px;background:none;cursor:pointer;color:#6b6b66;transition:all .1s}
+.save-btn.saved{background:#ECFDF5;color:#065F46;border-color:#6EE7B7}
+.reasons{margin-top:10px;padding-top:10px;border-top:1px solid #f0f0ec;display:none}
+.reasons.open{display:block}
+.reason{font-size:11px;color:#6b6b66;padding:2px 0}
+
+/* Error */
+.error-box{background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:12px;margin-top:10px;font-size:13px;color:#991B1B}
+
+/* Analysis */
+.hot-grid{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+.hot-ball{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;cursor:pointer;transition:transform .1s}
+.hot-ball:active{transform:scale(.9)}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.stat-item{background:#f8f8f6;border-radius:10px;padding:12px}
+.stat-val{font-size:20px;font-weight:700;color:#18181b}
+.stat-lbl{font-size:10px;color:#a0a09a;margin-top:2px}
+
+/* History */
+.hist-card{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:8px}
+.hist-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.hist-date{font-size:11px;color:#a0a09a}
+.hist-hit{font-size:10px;padding:2px 8px;border-radius:20px}
+
+/* Spinner */
+.spin{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Empty */
+.empty{text-align:center;padding:48px 20px;color:#a0a09a}
+.empty .big{font-size:48px;margin-bottom:12px}
+.empty p{font-size:14px}
+.empty small{font-size:12px;margin-top:4px;display:block}
+
+/* Disclaimer */
+.disclaimer{text-align:center;font-size:10px;color:#c0c0bc;margin-top:20px;padding:12px;background:#fff;border-radius:10px}
+
+/* Bar chart */
+.bar-chart{margin-top:12px}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.bar-lbl{font-size:9px;color:#a0a09a;width:52px;text-align:right;flex-shrink:0}
+.bar-track{flex:1;height:14px;background:#f0f0ec;border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;background:#18181b;transition:width .6s ease}
+.bar-cnt{font-size:9px;color:#a0a09a;width:18px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="nav">
+    <div class="nav-title">选号助手</div>
+    <div class="nav-sub">数据分析工具 · 娱乐参考</div>
+  </div>
+
+  <!-- Page: Generate -->
+  <div class="page active" id="page-gen">
+    <div style="padding-top:12px">
+      <div class="type-toggle">
+        <button class="type-btn active" onclick="setType('ssq',this)">双色球</button>
+        <button class="type-btn" onclick="setType('dlt',this)">大乐透</button>
+      </div>
+
+      <div class="card">
+        <div class="card-label">冷热号策略</div>
+        <div class="slider-group">
+          <div class="slider-lbl"><span>热号偏向比例</span><span class="slider-val" id="hot-val">热号 60%</span></div>
+          <div class="slider-row">
+            <span style="font-size:10px;color:#a0a09a">冷</span>
+            <input type="range" id="hot-ratio" min="0" max="100" value="60" oninput="updateHot(this.value)">
+            <span style="font-size:10px;color:#a0a09a">热</span>
+          </div>
+        </div>
+        <div class="slider-group" style="margin-bottom:0">
+          <div class="slider-lbl"><span>统计窗口</span><span class="slider-val" id="win-val">30 期</span></div>
+          <div class="slider-row">
+            <input type="range" id="hot-window" min="10" max="100" step="5" value="30" oninput="document.getElementById('win-val').textContent=this.value+' 期'">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">结构过滤</div>
+        <div class="grid2">
+          <div class="mini-card">
+            <div class="mini-label">奇偶比</div>
+            <div class="num-row">
+              <input type="number" id="odd-n" value="3" min="0" max="6">
+              <span>奇:</span>
+              <input type="number" id="even-n" value="3" min="0" max="6">
+              <span>偶</span>
+            </div>
+          </div>
+          <div class="mini-card">
+            <div class="mini-label">和值范围</div>
+            <div class="num-row">
+              <input type="number" id="sum-min" value="60" min="1" max="250" style="width:44px">
+              <span>~</span>
+              <input type="number" id="sum-max" value="120" min="1" max="250" style="width:44px">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">形态选项</div>
+        <div class="toggle-row">
+          <label>包含连号</label>
+          <label class="sw"><input type="checkbox" id="chk-consec"><div class="sw-track"></div><div class="sw-thumb"></div></label>
+        </div>
+        <div class="toggle-row">
+          <label>包含同尾号</label>
+          <label class="sw"><input type="checkbox" id="chk-tail"><div class="sw-track"></div><div class="sw-thumb"></div></label>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">生成注数</div>
+        <div class="count-row">
+          <button class="cnt-btn active" onclick="setCount(3,this)">3注</button>
+          <button class="cnt-btn" onclick="setCount(5,this)">5注</button>
+          <button class="cnt-btn" onclick="setCount(8,this)">8注</button>
+          <button class="cnt-btn" onclick="setCount(10,this)">10注</button>
+          <button class="cnt-btn" onclick="setCount(15,this)">15注</button>
+        </div>
+      </div>
+
+      <button class="gen-btn" id="gen-btn" onclick="doGenerate()">
+        <span id="gen-txt">生成推荐号码</span>
+      </button>
+      <div id="error-area"></div>
+
+      <div id="results-wrap" style="display:none">
+        <div class="results-header">
+          <span class="results-title" id="res-count">推荐 0 注</span>
+          <div class="sort-pills">
+            <button class="sort-pill active" onclick="sortBy('score',this)">评分</button>
+            <button class="sort-pill" onclick="sortBy('sum',this)">和值</button>
+            <button class="sort-pill" onclick="sortBy('hot',this)">热号</button>
+          </div>
+        </div>
+        <div id="results-list"></div>
+        <div class="disclaimer">娱乐分析工具 · 彩票有风险 · 理性参与 · 量力而行</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page: Analysis -->
+  <div class="page" id="page-analysis">
+    <div style="padding-top:12px">
+      <div class="card">
+        <div class="card-label">双色球红球热号 TOP 14（近30期）</div>
+        <div class="hot-grid" id="hot-grid"></div>
+      </div>
+      <div class="stat-grid" id="stat-grid"></div>
+      <div class="card" style="margin-top:10px">
+        <div class="card-label">和值分布（近100期）</div>
+        <div class="bar-chart" id="sum-bars"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page: History -->
+  <div class="page" id="page-hist">
+    <div style="padding-top:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <span style="font-size:15px;font-weight:600">我的记录</span>
+        <span id="hist-count" style="font-size:11px;color:#a0a09a"></span>
+      </div>
+      <div id="hist-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Tab Bar -->
+<div class="tabbar">
+  <button class="tabbar-btn active" onclick="switchTab('gen',this)" id="tab-gen-btn">
+    <div class="tab-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+    </div>
+    生成
+  </button>
+  <button class="tabbar-btn" onclick="switchTab('analysis',this)" id="tab-analysis-btn">
+    <div class="tab-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    </div>
+    分析
+  </button>
+  <button class="tabbar-btn" onclick="switchTab('hist',this)" id="tab-hist-btn">
+    <div class="tab-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    </div>
+    记录
+  </button>
+</div>
+
+<script>
+"use strict";
+(() => {
+  // node_modules/uuid/dist/esm-browser/rng.js
+  var getRandomValues;
+  var rnds8 = new Uint8Array(16);
+  function rng() {
+    if (!getRandomValues) {
+      getRandomValues = typeof crypto !== "undefined" && crypto.getRandomValues && crypto.getRandomValues.bind(crypto);
+      if (!getRandomValues) {
+        throw new Error("crypto.getRandomValues() not supported. See https://github.com/uuidjs/uuid#getrandomvalues-not-supported");
+      }
+    }
+    return getRandomValues(rnds8);
+  }
+
+  // node_modules/uuid/dist/esm-browser/stringify.js
+  var byteToHex = [];
+  for (let i = 0; i < 256; ++i) {
+    byteToHex.push((i + 256).toString(16).slice(1));
+  }
+  function unsafeStringify(arr, offset = 0) {
+    return byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + "-" + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + "-" + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + "-" + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + "-" + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]];
+  }
+
+  // node_modules/uuid/dist/esm-browser/native.js
+  var randomUUID = typeof crypto !== "undefined" && crypto.randomUUID && crypto.randomUUID.bind(crypto);
+  var native_default = {
+    randomUUID
+  };
+
+  // node_modules/uuid/dist/esm-browser/v4.js
+  function v4(options, buf, offset) {
+    if (native_default.randomUUID && !buf && !options) {
+      return native_default.randomUUID();
+    }
+    options = options || {};
+    const rnds = options.random || (options.rng || rng)();
+    rnds[6] = rnds[6] & 15 | 64;
+    rnds[8] = rnds[8] & 63 | 128;
+    if (buf) {
+      offset = offset || 0;
+      for (let i = 0; i < 16; ++i) {
+        buf[offset + i] = rnds[i];
+      }
+      return buf;
+    }
+    return unsafeStringify(rnds);
+  }
+  var v4_default = v4;
+
+  // src/shared-types.ts
+  var LOTTERY_CONFIG = {
+    ssq: {
+      name: "\u53CC\u8272\u7403",
+      redCount: 6,
+      // 红球数量
+      redMin: 1,
+      redMax: 33,
+      blueCount: 1,
+      // 蓝球数量
+      blueMin: 1,
+      blueMax: 16
+    },
+    dlt: {
+      name: "\u5927\u4E50\u900F",
+      redCount: 5,
+      redMin: 1,
+      redMax: 35,
+      blueCount: 2,
+      blueMin: 1,
+      blueMax: 12
+    }
+  };
+  var DEFAULT_SSQ_STRATEGY = {
+    lotteryType: "ssq",
+    hotColdRatio: 0.6,
+    hotWindowPeriods: 30,
+    oddEvenTarget: [3, 3],
+    sumRange: [60, 120],
+    includeConsecutive: false,
+    includeSameTail: false,
+    mustInclude: [],
+    mustExclude: []
+  };
+  var DEFAULT_DLT_STRATEGY = {
+    lotteryType: "dlt",
+    hotColdRatio: 0.6,
+    hotWindowPeriods: 30,
+    oddEvenTarget: [3, 2],
+    sumRange: [60, 120],
+    includeConsecutive: false,
+    includeSameTail: false,
+    mustInclude: [],
+    mustExclude: []
+  };
+
+  // src/strategy-engine/analyzer.ts
+  var COLD_THRESHOLD_PERIODS = 15;
+  var HOT_FREQUENCY_THRESHOLD = 0.3;
+  function analyzeHistory(history, lotteryType, windowPeriods = 30) {
+    const config = LOTTERY_CONFIG[lotteryType];
+    const sorted = [...history].filter((r) => r.lotteryType === lotteryType).sort((a, b) => b.issue.localeCompare(a.issue));
+    const windowRecords = sorted.slice(0, windowPeriods);
+    const allRecords = sorted;
+    const numberStats = buildStats(
+      config.redMin,
+      config.redMax,
+      allRecords.map((r) => r.numbers),
+      windowRecords.map((r) => r.numbers),
+      windowPeriods
+    );
+    const bonusStats = buildStats(
+      config.blueMin,
+      config.blueMax,
+      allRecords.map((r) => r.bonus),
+      windowRecords.map((r) => r.bonus),
+      windowPeriods
+    );
+    const sums = allRecords.map((r) => r.numbers.reduce((a, b) => a + b, 0));
+    const avgSum = sums.reduce((a, b) => a + b, 0) / (sums.length || 1);
+    const oddCounts = allRecords.map(
+      (r) => r.numbers.filter((n) => n % 2 !== 0).length
+    );
+    const avgOddCount = oddCounts.reduce((a, b) => a + b, 0) / (oddCounts.length || 1);
+    const consecutivePairs = findCommonConsecutivePairs(
+      allRecords.map((r) => r.numbers)
+    );
+    const sameTailGroups = buildSameTailGroups(config.redMin, config.redMax);
+    return {
+      lotteryType,
+      analyzedPeriods: allRecords.length,
+      numberStats,
+      bonusStats,
+      avgSum,
+      avgOddCount,
+      consecutivePairs,
+      sameTailGroups
+    };
+  }
+  function buildStats(min, max, allDraws, windowDraws, windowPeriods) {
+    const stats = [];
+    for (let num = min; num <= max; num++) {
+      const totalCount = allDraws.filter((draw) => draw.includes(num)).length;
+      const frequencyRate = totalCount / (allDraws.length || 1);
+      const windowCount = windowDraws.filter((draw) => draw.includes(num)).length;
+      const windowRate = windowCount / (windowPeriods || 1);
+      let lastAppearance = 0;
+      for (let i = 0; i < allDraws.length; i++) {
+        if (!allDraws[i].includes(num)) {
+          lastAppearance++;
+        } else {
+          break;
+        }
+      }
+      let consecutiveCount = 0;
+      for (const draw of allDraws) {
+        if (draw.includes(num)) {
+          consecutiveCount++;
+        } else {
+          break;
+        }
+      }
+      const isHot = windowRate >= HOT_FREQUENCY_THRESHOLD;
+      const isCold = lastAppearance >= COLD_THRESHOLD_PERIODS;
+      const weight = calculateWeight(frequencyRate, isHot, isCold, consecutiveCount, lastAppearance);
+      stats.push({
+        number: num,
+        frequency: totalCount,
+        frequencyRate,
+        lastAppearance,
+        isHot,
+        isCold,
+        consecutiveCount,
+        weight
+      });
+    }
+    return stats;
+  }
+  function calculateWeight(frequencyRate, isHot, isCold, consecutiveCount, lastAppearance) {
+    let weight = frequencyRate * 100;
+    if (isHot) weight *= 1.3;
+    if (isCold) weight *= 0.8;
+    if (consecutiveCount >= 3) weight *= 0.9;
+    if (lastAppearance >= 8 && lastAppearance < COLD_THRESHOLD_PERIODS) {
+      weight *= 1.1;
+    }
+    return Math.max(weight, 0.1);
+  }
+  function findCommonConsecutivePairs(draws) {
+    const pairCount = /* @__PURE__ */ new Map();
+    for (const draw of draws) {
+      const sorted = [...draw].sort((a, b) => a - b);
+      for (let i = 0; i < sorted.length - 1; i++) {
+        if (sorted[i + 1] - sorted[i] === 1) {
+          const key = `${sorted[i]}-${sorted[i + 1]}`;
+          pairCount.set(key, (pairCount.get(key) || 0) + 1);
+        }
+      }
+    }
+    return [...pairCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([key]) => key.split("-").map(Number));
+  }
+  function buildSameTailGroups(min, max) {
+    const groups = /* @__PURE__ */ new Map();
+    for (let n = min; n <= max; n++) {
+      const tail = n % 10;
+      if (!groups.has(tail)) groups.set(tail, []);
+      groups.get(tail).push(n);
+    }
+    return [...groups.values()].filter((g) => g.length >= 2);
+  }
+  function applyStrategyWeights(stats, config) {
+    return stats.map((stat) => {
+      let weight = stat.weight;
+      if (stat.isHot) {
+        weight *= 1 + config.hotColdRatio;
+      } else if (stat.isCold) {
+        weight *= 1 - config.hotColdRatio * 0.5;
+      }
+      if (config.mustExclude.includes(stat.number)) {
+        weight = 0;
+      }
+      if (config.mustInclude.includes(stat.number)) {
+        weight = 9999;
+      }
+      return { ...stat, weight };
+    });
+  }
+
+  // src/strategy-engine/sampler.ts
+  function weightedSample(stats, count) {
+    if (stats.length < count) {
+      throw new Error(`\u5019\u9009\u53F7\u7801\u6570\u91CF(${stats.length})\u4E0D\u8DB3\uFF0C\u65E0\u6CD5\u62BD\u53D6 ${count} \u4E2A`);
+    }
+    const pool = [...stats.filter((s) => s.weight > 0)];
+    const selected = [];
+    while (selected.length < count && pool.length > 0) {
+      const totalWeight = pool.reduce((sum, s) => sum + s.weight, 0);
+      let rand = Math.random() * totalWeight;
+      let idx = 0;
+      for (idx = 0; idx < pool.length; idx++) {
+        rand -= pool[idx].weight;
+        if (rand <= 0) break;
+      }
+      selected.push(pool[idx].number);
+      pool.splice(idx, 1);
+    }
+    return selected.sort((a, b) => a - b);
+  }
+
+  // src/strategy-engine/filters.ts
+  function checkOddEven(numbers, target) {
+    const oddCount = numbers.filter((n) => n % 2 !== 0).length;
+    const evenCount = numbers.length - oddCount;
+    const [targetOdd, targetEven] = target;
+    const oddOk = Math.abs(oddCount - targetOdd) <= 1;
+    const evenOk = Math.abs(evenCount - targetEven) <= 1;
+    const passed = oddOk && evenOk;
+    return {
+      passed,
+      reasons: passed ? [`\u5947\u5076\u6BD4 ${oddCount}:${evenCount}\uFF0C\u7B26\u5408\u76EE\u6807 ${targetOdd}:${targetEven}`] : [`\u5947\u5076\u6BD4 ${oddCount}:${evenCount}\uFF0C\u4E0D\u7B26\u5408\u76EE\u6807 ${targetOdd}:${targetEven}`]
+    };
+  }
+  function checkSum(numbers, range) {
+    const sum = numbers.reduce((a, b) => a + b, 0);
+    const [min, max] = range;
+    const passed = sum >= min && sum <= max;
+    return {
+      passed,
+      reasons: passed ? [`\u548C\u503C ${sum}\uFF0C\u5728\u533A\u95F4 [${min}, ${max}] \u5185`] : [`\u548C\u503C ${sum}\uFF0C\u4E0D\u5728\u533A\u95F4 [${min}, ${max}] \u5185`]
+    };
+  }
+  function checkConsecutive(numbers) {
+    const sorted = [...numbers].sort((a, b) => a - b);
+    const pairs = [];
+    for (let i = 0; i < sorted.length - 1; i++) {
+      if (sorted[i + 1] - sorted[i] === 1) {
+        pairs.push([sorted[i], sorted[i + 1]]);
+      }
+    }
+    return { hasConsecutive: pairs.length > 0, pairs };
+  }
+  function checkSameTail(numbers) {
+    const tailMap = /* @__PURE__ */ new Map();
+    for (const n of numbers) {
+      const tail = n % 10;
+      if (!tailMap.has(tail)) tailMap.set(tail, []);
+      tailMap.get(tail).push(n);
+    }
+    const groups = [...tailMap.values()].filter((g) => g.length >= 2);
+    return { hasSameTail: groups.length > 0, groups };
+  }
+  function applyFilters(numbers, config) {
+    const reasons = [];
+    let passed = true;
+    const oddEvenResult = checkOddEven(numbers, config.oddEvenTarget);
+    reasons.push(...oddEvenResult.reasons);
+    if (!oddEvenResult.passed) passed = false;
+    const sumResult = checkSum(numbers, config.sumRange);
+    reasons.push(...sumResult.reasons);
+    if (!sumResult.passed) passed = false;
+    const consecutiveResult = checkConsecutive(numbers);
+    if (config.includeConsecutive && !consecutiveResult.hasConsecutive) {
+      passed = false;
+      reasons.push("\u7B56\u7565\u8981\u6C42\u5305\u542B\u8FDE\u53F7\uFF0C\u4F46\u5F53\u524D\u7EC4\u5408\u65E0\u8FDE\u53F7");
+    } else if (!config.includeConsecutive && consecutiveResult.hasConsecutive) {
+      passed = false;
+      reasons.push(
+        `\u7B56\u7565\u8981\u6C42\u65E0\u8FDE\u53F7\uFF0C\u4F46\u53D1\u73B0\u8FDE\u53F7\uFF1A${consecutiveResult.pairs.map((p) => p.join("-")).join("\u3001")}`
+      );
+    } else if (consecutiveResult.hasConsecutive) {
+      reasons.push(
+        `\u5305\u542B\u8FDE\u53F7\uFF1A${consecutiveResult.pairs.map((p) => p.join("-")).join("\u3001")}`
+      );
+    }
+    const sameTailResult = checkSameTail(numbers);
+    if (config.includeSameTail && !sameTailResult.hasSameTail) {
+      passed = false;
+      reasons.push("\u7B56\u7565\u8981\u6C42\u5305\u542B\u540C\u5C3E\u53F7\uFF0C\u4F46\u5F53\u524D\u7EC4\u5408\u65E0\u540C\u5C3E\u53F7");
+    } else if (!config.includeSameTail && sameTailResult.hasSameTail) {
+      passed = false;
+      reasons.push(
+        `\u7B56\u7565\u8981\u6C42\u65E0\u540C\u5C3E\u53F7\uFF0C\u4F46\u53D1\u73B0\uFF1A${sameTailResult.groups.map((g) => g.join("\u3001")).join(" / ")}`
+      );
+    } else if (sameTailResult.hasSameTail) {
+      reasons.push(
+        `\u5305\u542B\u540C\u5C3E\u53F7\uFF1A${sameTailResult.groups.map((g) => g.join("\u3001")).join(" / ")}`
+      );
+    }
+    const excluded = numbers.filter((n) => config.mustExclude.includes(n));
+    if (excluded.length > 0) {
+      passed = false;
+      reasons.push(`\u5305\u542B\u88AB\u6392\u9664\u7684\u53F7\u7801\uFF1A${excluded.join("\u3001")}`);
+    }
+    return { passed, reasons };
+  }
+  function scoreNumberSet(numbers, config, hotCount, coldCount) {
+    let score = 50;
+    const sum = numbers.reduce((a, b) => a + b, 0);
+    const [minSum, maxSum] = config.sumRange;
+    const midSum = (minSum + maxSum) / 2;
+    const sumRange = (maxSum - minSum) / 2;
+    const sumDeviation = Math.abs(sum - midSum) / sumRange;
+    score -= sumDeviation * 20;
+    const [targetOdd] = config.oddEvenTarget;
+    const actualOdd = numbers.filter((n) => n % 2 !== 0).length;
+    const oddBalance = 1 - Math.abs(actualOdd - targetOdd) / numbers.length;
+    score += oddBalance * 15;
+    const actualHotRatio = hotCount / numbers.length;
+    const hotDeviation = Math.abs(actualHotRatio - config.hotColdRatio);
+    score -= hotDeviation * 20;
+    if (coldCount > 2) score -= (coldCount - 2) * 5;
+    return Math.min(100, Math.max(0, Math.round(score)));
+  }
+
+  // src/strategy-engine/generator.ts
+  var MAX_FILTER_ATTEMPTS = 500;
+  var HOT_THRESHOLD = 0.3;
+  var COLD_THRESHOLD = 15;
+  function generateNumbers(history, config, count = 5) {
+    if (count < 1 || count > 20) {
+      throw new Error("\u751F\u6210\u6CE8\u6570\u987B\u5728 1-20 \u4E4B\u95F4");
+    }
+    const analysis = analyzeHistory(
+      history,
+      config.lotteryType,
+      config.hotWindowPeriods
+    );
+    const weightedFrontStats = applyStrategyWeights(analysis.numberStats, config);
+    const weightedBonusStats = applyStrategyWeights(analysis.bonusStats, config);
+    const lotteryConfig = LOTTERY_CONFIG[config.lotteryType];
+    const sets = [];
+    const seenKeys = /* @__PURE__ */ new Set();
+    let totalAttempts = 0;
+    while (sets.length < count && totalAttempts < MAX_FILTER_ATTEMPTS) {
+      totalAttempts++;
+      try {
+        const frontNumbers = sampleFront(
+          weightedFrontStats,
+          config,
+          lotteryConfig.redCount
+        );
+        const filterResult = applyFilters(frontNumbers, config);
+        if (!filterResult.passed) continue;
+        const key = frontNumbers.join(",");
+        if (seenKeys.has(key)) continue;
+        seenKeys.add(key);
+        const bonusNumbers = weightedSample(
+          weightedBonusStats,
+          lotteryConfig.blueCount
+        );
+        const hotCount = frontNumbers.filter(
+          (n) => analysis.numberStats.find((s) => s.number === n)?.isHot
+        ).length;
+        const coldCount = frontNumbers.filter(
+          (n) => analysis.numberStats.find((s) => s.number === n)?.isCold
+        ).length;
+        const { hasConsecutive } = checkConsecutive(frontNumbers);
+        const { hasSameTail } = checkSameTail(frontNumbers);
+        const score = scoreNumberSet(frontNumbers, config, hotCount, coldCount);
+        const reasons = buildReasons(
+          frontNumbers,
+          filterResult.reasons,
+          hotCount,
+          coldCount,
+          analysis
+        );
+        sets.push({
+          id: v4_default(),
+          numbers: frontNumbers,
+          bonus: bonusNumbers,
+          score,
+          reasons,
+          stats: {
+            oddCount: frontNumbers.filter((n) => n % 2 !== 0).length,
+            evenCount: frontNumbers.filter((n) => n % 2 === 0).length,
+            sum: frontNumbers.reduce((a, b) => a + b, 0),
+            hotCount,
+            coldCount,
+            hasConsecutive,
+            hasSameTail
+          }
+        });
+      } catch {
+      }
+    }
+    if (sets.length < count) {
+      const fallback = generateFallback(
+        weightedFrontStats,
+        weightedBonusStats,
+        config,
+        lotteryConfig.redCount,
+        lotteryConfig.blueCount,
+        count - sets.length,
+        seenKeys
+      );
+      sets.push(...fallback);
+    }
+    sets.sort((a, b) => b.score - a.score);
+    return {
+      sets,
+      strategySnapshot: config,
+      generatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+      analysisUsed: {
+        periods: analysis.analyzedPeriods,
+        hotThreshold: HOT_THRESHOLD,
+        coldThreshold: COLD_THRESHOLD
+      }
+    };
+  }
+  function sampleFront(weightedStats, config, count) {
+    const mustIncluded = weightedStats.filter(
+      (s) => config.mustInclude.includes(s.number)
+    );
+    if (mustIncluded.length > count) {
+      throw new Error("mustInclude \u6570\u91CF\u8D85\u8FC7\u53EF\u9009\u6570\u91CF");
+    }
+    const remaining = weightedStats.filter(
+      (s) => !config.mustInclude.includes(s.number) && s.weight > 0
+    );
+    const needMore = count - mustIncluded.length;
+    const sampled = weightedSample(remaining, needMore);
+    return [...mustIncluded.map((s) => s.number), ...sampled].sort(
+      (a, b) => a - b
+    );
+  }
+  function generateFallback(frontStats, bonusStats, config, frontCount, bonusCount, need, seenKeys) {
+    const result = [];
+    let attempts = 0;
+    while (result.length < need && attempts < 200) {
+      attempts++;
+      try {
+        const frontNumbers = sampleFront(frontStats, config, frontCount);
+        const key = frontNumbers.join(",");
+        if (seenKeys.has(key)) continue;
+        seenKeys.add(key);
+        const bonusNumbers = weightedSample(bonusStats, bonusCount);
+        const hotCount = frontNumbers.filter(
+          (n) => frontStats.find((s) => s.number === n)?.isHot
+        ).length;
+        const coldCount = frontNumbers.filter(
+          (n) => frontStats.find((s) => s.number === n)?.isCold
+        ).length;
+        const { hasConsecutive } = checkConsecutive(frontNumbers);
+        const { hasSameTail } = checkSameTail(frontNumbers);
+        result.push({
+          id: v4_default(),
+          numbers: frontNumbers,
+          bonus: bonusNumbers,
+          score: 30,
+          // 降级生成，评分较低
+          reasons: ["\uFF08\u653E\u5BBD\u8FC7\u6EE4\u6761\u4EF6\u8865\u5168\uFF09\u57FA\u4E8E\u6743\u91CD\u91C7\u6837\u751F\u6210"],
+          stats: {
+            oddCount: frontNumbers.filter((n) => n % 2 !== 0).length,
+            evenCount: frontNumbers.filter((n) => n % 2 === 0).length,
+            sum: frontNumbers.reduce((a, b) => a + b, 0),
+            hotCount,
+            coldCount,
+            hasConsecutive,
+            hasSameTail
+          }
+        });
+      } catch {
+      }
+    }
+    return result;
+  }
+  function buildReasons(numbers, filterReasons, hotCount, coldCount, analysis) {
+    const reasons = [];
+    const hotNumbers = numbers.filter(
+      (n) => analysis.numberStats.find((s) => s.number === n)?.isHot
+    );
+    const coldNumbers = numbers.filter(
+      (n) => analysis.numberStats.find((s) => s.number === n)?.isCold
+    );
+    if (hotNumbers.length > 0) {
+      reasons.push(`\u70ED\u53F7\uFF08\u8FD1\u671F\u9AD8\u9891\uFF09\uFF1A${hotNumbers.join("\u3001")}`);
+    }
+    if (coldNumbers.length > 0) {
+      reasons.push(`\u51B7\u53F7\uFF08\u4E45\u672A\u51FA\u73B0\uFF09\uFF1A${coldNumbers.join("\u3001")}`);
+    }
+    reasons.push(...filterReasons.filter((r) => !r.startsWith("\u7B56\u7565\u8981\u6C42")));
+    return reasons;
+  }
+
+  // src/strategy-engine/reviewer.ts
+  function calcHitLevel_ssq(frontHit, bonusHit) {
+    if (frontHit === 6 && bonusHit === 1) return "level1";
+    if (frontHit === 6 && bonusHit === 0) return "level2";
+    if (frontHit === 5 && bonusHit === 1) return "level3";
+    if (frontHit === 5 && bonusHit === 0 || frontHit === 4 && bonusHit === 1)
+      return "level4";
+    if (frontHit === 4 || frontHit === 3 || frontHit <= 2 && bonusHit === 1)
+      return "partial";
+    return "none";
+  }
+  function calcHitLevel_dlt(frontHit, bonusHit) {
+    if (frontHit === 5 && bonusHit === 2) return "level1";
+    if (frontHit === 5 && bonusHit === 1) return "level2";
+    if (frontHit === 5 && bonusHit === 0) return "level3";
+    if (frontHit === 4 && bonusHit >= 1) return "level4";
+    if (frontHit >= 3 || bonusHit >= 1) return "partial";
+    return "none";
+  }
+  function reviewSingle(selection, drawRecord) {
+    const hitNumbers = selection.numbers.filter(
+      (n) => drawRecord.numbers.includes(n)
+    );
+    const hitBonus = selection.bonus.filter(
+      (n) => drawRecord.bonus.includes(n)
+    );
+    const hitLevel = selection.strategy.lotteryType === "ssq" ? calcHitLevel_ssq(hitNumbers.length, hitBonus.length) : calcHitLevel_dlt(hitNumbers.length, hitBonus.length);
+    const strategyDeviation = calcStrategyDeviation(
+      drawRecord.numbers,
+      selection.strategy
+    );
+    return {
+      selection,
+      drawRecord,
+      hitNumbers,
+      hitBonus,
+      hitLevel,
+      strategyDeviation
+    };
+  }
+  function reviewBatch(selections, drawRecords) {
+    const drawMap = new Map(drawRecords.map((d) => [d.issue, d]));
+    const records = selections.map((sel) => {
+      const draw = sel.issue ? drawMap.get(sel.issue) : void 0;
+      if (!draw) return null;
+      return reviewSingle(sel, draw);
+    }).filter(Boolean);
+    const hitRateByLevel = {
+      none: 0,
+      partial: 0,
+      level4: 0,
+      level3: 0,
+      level2: 0,
+      level1: 0
+    };
+    for (const r of records) {
+      hitRateByLevel[r.hitLevel]++;
+    }
+    const total = records.length || 1;
+    for (const key of Object.keys(hitRateByLevel)) {
+      hitRateByLevel[key] = hitRateByLevel[key] / total;
+    }
+    const avgStrategyDeviation = records.reduce((sum, r) => sum + r.strategyDeviation, 0) / (records.length || 1);
+    const trend = records.sort(
+      (a, b) => (a.drawRecord?.issue || "").localeCompare(b.drawRecord?.issue || "")
+    ).map((r) => ({
+      issue: r.drawRecord?.issue || "",
+      hitCount: r.hitNumbers.length,
+      date: r.drawRecord?.drawDate || ""
+    }));
+    const suggestions = generateSuggestions(records, avgStrategyDeviation);
+    return {
+      totalSelections: selections.length,
+      hitRateByLevel,
+      avgStrategyDeviation,
+      trend,
+      suggestions
+    };
+  }
+  function calcStrategyDeviation(actualNumbers, strategy) {
+    let deviationScore = 0;
+    let factors = 0;
+    const actualOdd = actualNumbers.filter((n) => n % 2 !== 0).length;
+    const [targetOdd] = strategy.oddEvenTarget;
+    const oddDeviation = Math.abs(actualOdd - targetOdd) / actualNumbers.length;
+    deviationScore += oddDeviation;
+    factors++;
+    const actualSum = actualNumbers.reduce((a, b) => a + b, 0);
+    const [minSum, maxSum] = strategy.sumRange;
+    const midSum = (minSum + maxSum) / 2;
+    const sumRange = maxSum - minSum;
+    const sumDeviation = Math.min(1, Math.abs(actualSum - midSum) / (sumRange / 2 || 1));
+    deviationScore += sumDeviation;
+    factors++;
+    return factors > 0 ? deviationScore / factors : 0;
+  }
+  function generateSuggestions(records, avgDeviation) {
+    const suggestions = [];
+    if (records.length < 5) {
+      suggestions.push("\u9009\u53F7\u8BB0\u5F55\u8F83\u5C11\uFF0C\u5EFA\u8BAE\u79EF\u7D2F\u66F4\u591A\u671F\u6570\u540E\u518D\u67E5\u770B\u590D\u76D8\u62A5\u544A");
+      return suggestions;
+    }
+    const hitAny = records.filter((r) => r.hitLevel !== "none").length;
+    const hitRate = hitAny / records.length;
+    if (hitRate < 0.3) {
+      suggestions.push("\u6574\u4F53\u547D\u4E2D\u7387\u504F\u4F4E\uFF0C\u5EFA\u8BAE\u9002\u5F53\u63D0\u9AD8\u70ED\u53F7\u6BD4\u4F8B\uFF08hotColdRatio \u8C03\u81F3 0.7\uFF09");
+    } else if (hitRate > 0.7) {
+      suggestions.push("\u547D\u4E2D\u7387\u8F83\u597D\uFF0C\u5F53\u524D\u7B56\u7565\u6548\u679C\u4E0D\u9519\uFF0C\u53EF\u4EE5\u4FDD\u6301");
+    }
+    if (avgDeviation > 0.5) {
+      suggestions.push("\u7B56\u7565\u504F\u79BB\u5EA6\u8F83\u9AD8\uFF0C\u5386\u53F2\u5F00\u5956\u4E0E\u7B56\u7565\u9884\u671F\u5DEE\u5F02\u5927\uFF0C\u5EFA\u8BAE\u91CD\u65B0\u6821\u51C6\u548C\u503C\u533A\u95F4");
+    }
+    const bonusHits = records.filter((r) => r.hitBonus.length > 0).length;
+    const bonusRate = bonusHits / records.length;
+    if (bonusRate < 0.1) {
+      suggestions.push("\u540E\u533A\uFF08\u84DD\u7403/\u540E\u533A\u53F7\uFF09\u547D\u4E2D\u7387\u504F\u4F4E\uFF0C\u53EF\u5C1D\u8BD5\u8C03\u6574\u540E\u533A\u7B56\u7565");
+    }
+    if (suggestions.length === 0) {
+      suggestions.push("\u7B56\u7565\u8868\u73B0\u7A33\u5B9A\uFF0C\u7EE7\u7EED\u4FDD\u6301\u5F53\u524D\u914D\u7F6E");
+    }
+    return suggestions;
+  }
+
+  // src/bundle-entry.ts
+  window.LotteryEngine = {
+    generateNumbers,
+    analyzeHistory,
+    reviewBatch,
+    DEFAULT_SSQ_STRATEGY,
+    DEFAULT_DLT_STRATEGY,
+    LOTTERY_CONFIG
+  };
+})();
+
+</script>
+
+<script>
+// ── App State ──
+var currentType = 'ssq';
+var generateCount = 3;
+var lastResults = [];
+var savedIds = new Set();
+var historyRecords = [];
+var analysisBuilt = false;
+
+var CFG = {
+  ssq: { red:33, redN:6, blue:16, blueN:1 },
+  dlt: { red:35, redN:5, blue:12, blueN:2 }
+};
+
+// ── Tab switching ──
+function switchTab(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tabbar-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'analysis' && !analysisBuilt) { buildAnalysis(); analysisBuilt = true; }
+  if (name === 'hist') renderHistory();
+}
+
+// ── Type / Count ──
+function setType(t, btn) {
+  currentType = t;
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('sum-max').value = t === 'ssq' ? 120 : 100;
+  document.getElementById('odd-n').value = t === 'ssq' ? 3 : 3;
+  document.getElementById('even-n').value = t === 'ssq' ? 3 : 2;
+  lastResults = [];
+  document.getElementById('results-wrap').style.display = 'none';
+}
+
+function setCount(n, btn) {
+  generateCount = n;
+  document.querySelectorAll('.cnt-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function updateHot(v) {
+  document.getElementById('hot-val').textContent = '热号 ' + v + '%';
+}
+
+// ── Build fake history using engine's LOTTERY_CONFIG ──
+function buildHistory(type, n) {
+  var cfg = CFG[type];
+  var records = [];
+  for (var i = 0; i < n; i++) {
+    var nums = [];
+    while (nums.length < cfg.redN) {
+      var x = Math.floor(Math.random() * cfg.red) + 1;
+      if (!nums.includes(x)) nums.push(x);
+    }
+    nums.sort(function(a,b){return a-b;});
+    var bonus = [];
+    while (bonus.length < cfg.blueN) {
+      var x = Math.floor(Math.random() * cfg.blue) + 1;
+      if (!bonus.includes(x)) bonus.push(x);
+    }
+    records.push({
+      id: i+1, issue: String(2024000+i),
+      drawDate: '2024-01-01', lotteryType: type,
+      numbers: nums, bonus: bonus,
+      createdAt: new Date().toISOString()
+    });
+  }
+  return records;
+}
+
+// ── Generate ──
+function doGenerate() {
+  var btn = document.getElementById('gen-btn');
+  var txt = document.getElementById('gen-txt');
+  btn.disabled = true;
+  txt.innerHTML = '<div class="spin"></div> 生成中…';
+  document.getElementById('error-area').innerHTML = '';
+
+  setTimeout(function() {
+    try {
+      var strategy = {
+        lotteryType: currentType,
+        hotColdRatio: parseInt(document.getElementById('hot-ratio').value) / 100,
+        hotWindowPeriods: parseInt(document.getElementById('hot-window').value),
+        oddEvenTarget: [
+          parseInt(document.getElementById('odd-n').value),
+          parseInt(document.getElementById('even-n').value)
+        ],
+        sumRange: [
+          parseInt(document.getElementById('sum-min').value),
+          parseInt(document.getElementById('sum-max').value)
+        ],
+        includeConsecutive: document.getElementById('chk-consec').checked,
+        includeSameTail: document.getElementById('chk-tail').checked,
+        mustInclude: [], mustExclude: []
+      };
+
+      var history = buildHistory(currentType, 100);
+      var result = window.LotteryEngine.generateNumbers(history, strategy, generateCount);
+
+      lastResults = result.sets;
+      document.getElementById('results-wrap').style.display = '';
+      document.getElementById('res-count').textContent = '推荐 ' + result.sets.length + ' 注 · ' + result.analysisUsed.periods + '期数据';
+      renderResults(lastResults);
+    } catch(e) {
+      document.getElementById('error-area').innerHTML =
+        '<div class="error-box">生成失败：' + (e.message || '请重试') + '</div>';
+    }
+    btn.disabled = false;
+    txt.textContent = '生成推荐号码';
+  }, 600);
+}
+
+// ── Render results ──
+function renderResults(sets) {
+  var list = document.getElementById('results-list');
+  list.innerHTML = sets.map(function(s, i) {
+    var isSaved = savedIds.has(s.id);
+    var balls = s.numbers.map(function(n) {
+      return '<div class="ball r">' + pad(n) + '</div>';
+    }).join('');
+    var bonus = s.bonus.map(function(n) {
+      return '<div class="ball b">' + pad(n) + '</div>';
+    }).join('');
+    var sc = s.score >= 70 ? 'score' : s.score >= 50 ? 'score mid' : 'score low';
+    var tags = '';
+    if (s.stats.hotCount > 0) tags += '<span class="tag hot">' + s.stats.hotCount + '热</span>';
+    if (s.stats.coldCount > 0) tags += '<span class="tag cold">' + s.stats.coldCount + '冷</span>';
+    tags += '<span class="tag sum">和 ' + s.stats.sum + '</span>';
+    tags += '<span class="tag ' + sc + '">评分 ' + s.score + '</span>';
+    var reasons = s.reasons.map(function(r) {
+      return '<div class="reason">· ' + r + '</div>';
+    }).join('');
+    return '<div class="result-card' + (isSaved ? ' saved' : '') + '" id="rc-' + s.id + '" onclick="toggleCard(event,\'' + s.id + '\',' + i + ')">' +
+      '<div class="balls">' + balls + '<div class="ball sep">+</div>' + bonus + '</div>' +
+      '<div class="tags">' + tags +
+      '<button class="save-btn' + (isSaved ? ' saved' : '') + '" id="sbtn-' + s.id + '" onclick="toggleSave(event,\'' + s.id + '\',' + i + ')">' +
+      (isSaved ? '已保存' : '保存') + '</button></div>' +
+      '<div class="reasons" id="rl-' + s.id + '">' + reasons + '</div></div>';
+  }).join('');
+}
+
+function toggleCard(e, id, idx) {
+  if (e.target.classList.contains('save-btn')) return;
+  var el = document.getElementById('rl-' + id);
+  if (el) el.classList.toggle('open');
+}
+
+function toggleSave(e, id, idx) {
+  e.stopPropagation();
+  var s = lastResults[idx];
+  var btn = document.getElementById('sbtn-' + id);
+  var card = document.getElementById('rc-' + id);
+  if (savedIds.has(id)) {
+    savedIds.delete(id);
+    btn.textContent = '保存'; btn.classList.remove('saved');
+    card.classList.remove('saved');
+    historyRecords = historyRecords.filter(function(h){return h.id !== id;});
+  } else {
+    savedIds.add(id);
+    btn.textContent = '已保存'; btn.classList.add('saved');
+    card.classList.add('saved');
+    var now = new Date();
+    historyRecords.unshift(Object.assign({}, s, {
+      savedAt: now.toLocaleDateString('zh-CN') + ' ' + now.toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'})
+    }));
+  }
+}
+
+function sortBy(field, btn) {
+  document.querySelectorAll('.sort-pill').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  var sorted = lastResults.slice();
+  if (field === 'score') sorted.sort(function(a,b){return b.score - a.score;});
+  else if (field === 'sum') sorted.sort(function(a,b){return a.stats.sum - b.stats.sum;});
+  else if (field === 'hot') sorted.sort(function(a,b){return b.stats.hotCount - a.stats.hotCount;});
+  renderResults(sorted);
+}
+
+// ── Analysis ──
+function buildAnalysis() {
+  var history = buildHistory('ssq', 100);
+  var analysis = window.LotteryEngine.analyzeHistory(history, 'ssq', 30);
+
+  // Hot balls
+  var sorted = analysis.numberStats.slice().sort(function(a,b){return b.frequency-a.frequency;}).slice(0,14);
+  var maxFreq = sorted[0].frequency;
+  var grid = document.getElementById('hot-grid');
+  grid.innerHTML = sorted.map(function(s) {
+    var heat = s.frequency / maxFreq;
+    var r = Math.round(240 - heat * 80);
+    var g = Math.round(240 - heat * 150);
+    var b2 = Math.round(240 - heat * 150);
+    var tr = Math.round(180 - heat * 100);
+    var tg = Math.round(100 - heat * 60);
+    var tb = Math.round(100 - heat * 60);
+    return '<div class="hot-ball" style="background:rgb('+r+','+g+','+b2+');color:rgb('+tr+','+tg+','+tb+');border:1px solid rgba('+tr+','+tg+','+tb+',.3)">' + pad(s.number) + '</div>';
+  }).join('');
+
+  // Stats
+  var sums = history.map(function(r){return r.numbers.reduce(function(a,b){return a+b;},0);});
+  var avgSum = (sums.reduce(function(a,b){return a+b;},0) / sums.length).toFixed(1);
+  var odds = history.map(function(r){return r.numbers.filter(function(n){return n%2!==0;}).length;});
+  var avgOdd = (odds.reduce(function(a,b){return a+b;},0) / odds.length).toFixed(1);
+
+  var consecCount = history.filter(function(r){
+    var s = r.numbers;
+    return s.some(function(_,i){return i>0 && s[i]-s[i-1]===1;});
+  }).length;
+  var tailCount = history.filter(function(r){
+    var tails = r.numbers.map(function(n){return n%10;});
+    return tails.some(function(t,i){return tails.indexOf(t)!==i;});
+  }).length;
+
+  document.getElementById('stat-grid').innerHTML = [
+    {val: avgSum, lbl: '平均和值', sub: '近100期'},
+    {val: avgOdd, lbl: '平均奇数个数', sub: '趋向3:3平衡'},
+    {val: (consecCount/history.length*100).toFixed(1)+'%', lbl: '连号出现频率', sub: '近100期'},
+    {val: (tailCount/history.length*100).toFixed(1)+'%', lbl: '同尾号出现频率', sub: '近100期'}
+  ].map(function(d){
+    return '<div class="stat-item"><div class="stat-val">'+d.val+'</div><div class="stat-lbl">'+d.lbl+'</div><div style="font-size:9px;color:#c0c0bc;margin-top:1px">'+d.sub+'</div></div>';
+  }).join('');
+
+  // Sum distribution bar chart
+  var bins = new Array(14).fill(0);
+  sums.forEach(function(s) {
+    var i = Math.max(0, Math.min(13, Math.floor((s - 30) / 15)));
+    bins[i]++;
+  });
+  var maxBin = Math.max.apply(null, bins);
+  document.getElementById('sum-bars').innerHTML = bins.map(function(cnt, i) {
+    var label = (30 + i*15) + '~' + (45 + i*15);
+    var pct = maxBin > 0 ? Math.round(cnt / maxBin * 100) : 0;
+    return '<div class="bar-row"><span class="bar-lbl">'+label+'</span>' +
+      '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%"></div></div>' +
+      '<span class="bar-cnt">'+cnt+'</span></div>';
+  }).join('');
+}
+
+// ── History ──
+function renderHistory() {
+  var cnt = document.getElementById('hist-count');
+  var list = document.getElementById('hist-list');
+  cnt.textContent = historyRecords.length + ' 条记录';
+  if (historyRecords.length === 0) {
+    list.innerHTML = '<div class="empty"><div class="big">🎱</div><p>暂无保存记录</p><small>在生成页面保存号码后显示</small></div>';
+    return;
+  }
+  list.innerHTML = historyRecords.map(function(r) {
+    var balls = r.numbers.map(function(n){return '<div class="ball r" style="width:30px;height:30px;font-size:11px">'+pad(n)+'</div>';}).join('');
+    var bonus = r.bonus.map(function(n){return '<div class="ball b" style="width:30px;height:30px;font-size:11px">'+pad(n)+'</div>';}).join('');
+    return '<div class="hist-card">' +
+      '<div class="hist-meta"><span class="hist-date">'+r.savedAt+'</span>' +
+      '<span class="hist-hit" style="background:#F0FDF4;color:#065F46">评分 '+r.score+'</span></div>' +
+      '<div class="balls">'+balls+'<div class="ball sep">+</div>'+bonus+'</div></div>';
+  }).join('');
+}
+
+// ── Utils ──
+function pad(n) { return String(n).padStart(2,'0'); }
+</script>
+</body>
+</html>
